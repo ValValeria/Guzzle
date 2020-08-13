@@ -360,5 +360,30 @@ class AddOrder(ListView,LoginRequiredMixin):
 
 
 
+class SortBy(ListView):
 
+    def get(self,request):
+        sortBy=request.GET.get('sortBy')
+        page=request.GET.get('page')
+        filters=['priceDesc','priceBtw',"price"]
+        filter_q=request.GET.getlist('filter')
+        
+        if filters.count(sortBy):
+            posts=Post.objects.order_by("price").all()
+
+            if sortBy.count('Desc'):
+               posts=posts.reverse()
+            elif sortBy.count('Btw') and len(filter_q)==2:
+               posts=posts.filter(price__gt=filter_q[0]).filter(price__lt=filter_q[1])
+            
+            list_new=list()
+
+            for key,item in enumerate(posts.iterator()):
+                new_item=list(posts.values())[key]
+                new_item.update({"user":{"username":item.user.username}})
+                list_new.append(new_item)
+
+            return JsonResponse(list(posts.values()),safe=False)
+        else:
+            return HttpResponseForbidden()
     

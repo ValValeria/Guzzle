@@ -34,5 +34,6 @@ urlpatterns = [
     re_path(r"^update_post",views.UpdatePost.as_view()),
     re_path(r"^orderproducts",views.UserOrders.as_view()),
     re_path(r"^addorderproducts",views.AddOrder.as_view()),
+    re_path(r"^sortpost",views.SortBy.as_view()),
     path("public/<folder>/<filename>",file),
 ]
