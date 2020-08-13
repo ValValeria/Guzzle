@@ -299,8 +299,16 @@ class UserOrders(ListView,LoginRequiredMixin):
           else:
               orders=Order.objects.filter(user__id=user_id)
               
-              if orders:
-                  products=orders[0].products.all().values()
+              if orders.exists():
+                  products=list()
+
+                  for key in range(0,len(orders),1):
+                      try:
+                          obj={"counter":orders[key].quantity}
+                          obj.update(orders[key].products.values()[0])
+                          products.append(obj)
+                      except IndexError:
+                          pass
               else:
                   products=[]
 
@@ -313,18 +321,44 @@ class UserOrders(ListView,LoginRequiredMixin):
 class AddOrder(ListView,LoginRequiredMixin):
 
     def get(self,request):
+
         user_id=request.GET.get('user_id')
         post_id=request.GET.get('post_id')
         num=request.GET.get('num')
+        
 
-        if user_id and post_id :
-            post = Post.objects.filter(id__exact=post_id)
+        if user_id and post_id and int(request.user.id) == int(user_id):
+
+            user_orders_l = Order.objects.filter(user_id=user_id)
+            user_order=user_orders_l[0].products.filter(id=post_id)
+            post=Post.objects.filter(id=post_id)  
 
             if post.exists():
-                obj,created=Order.objects.update_or_create(quantity=num if num else 1,user=request.user)
-                obj.products.add(post.first())
-                return JsonResponse({"status":"Added"})
+                status="Added"
+                if user_order.exists():
+                    order=user_orders_l.first()
+
+                    if int(num if num else "1") == 0:
+                        user_orders_l[0].remove(user_order)
+                        status="Deleted"
+                    else:     
+                        order.quantity=num
+                        order.save()
+                        user_orders_l[0].save()
+                else:
+                    new_order=Order(quantity=num);
+                    new_order.user=request.user
+                    new_order.save();
+                    new_order.products.add(post.first())
+
+
+                return JsonResponse({"status":status})
             else:
                 return JsonResponse({"errors":"The post doesn't exist"})
         else :
             return HttpResponseForbidden()
+
+
+
+
+    
