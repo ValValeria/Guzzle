@@ -500,6 +500,7 @@ class UsersList(ListView):
         return JsonResponse(response,safe=False)
 
 
+
 class DeleteUser(ListView):
     
     def get(self,request):
