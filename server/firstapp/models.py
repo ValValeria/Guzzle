@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 
 
+class Category(models.Model):
+    cate_name = models.CharField(max_length=20)
 
 class Post(models.Model):
     title = models.CharField(max_length=20)
@@ -10,6 +12,7 @@ class Post(models.Model):
     descr = models.CharField(max_length=300)
     user=models.ForeignKey(User,on_delete=models.DO_NOTHING)
     price= models.IntegerField(default=0)
+    categories=models.ManyToManyField(Category)
 
     @property
     def orderCount(self):

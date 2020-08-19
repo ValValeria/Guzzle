@@ -35,5 +35,10 @@ urlpatterns = [
     re_path(r"^orderproducts",views.UserOrders.as_view()),
     re_path(r"^addorderproducts",views.AddOrder.as_view()),
     re_path(r"^sortpost",views.SortBy.as_view()),
+    re_path(r"^category",views.CategoryView.as_view()),
+    re_path(r"^catlist",views.CategoriesList.as_view()),
+    re_path(r"^buyers",views.ProductsBuyers.as_view()),  
+    re_path(r"^users",views.UsersList.as_view()),  
+    re_path(r"^deleteuser",views.DeleteUser.as_view()),  
     path("public/<folder>/<filename>",file),
 ]

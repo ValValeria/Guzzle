@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse,HttpResponseForbidden
 from firstapp.response import Response
 import json
+from django.contrib.auth.mixins import PermissionRequiredMixin, AccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
@@ -12,8 +13,9 @@ from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView,DetailView,FormView
+from django.views import View
 from django import forms
-from firstapp.models import Post,Comments,Order
+from firstapp.models import Post,Comments,Order,Category
 from django.core.paginator import Paginator
 from django.core.files import File
 from django.core import serializers
@@ -50,8 +52,13 @@ def signup(request):
           if request.user.is_authenticated:
               message['status']="Added"
               return JsonResponse(message)
-
-          form=SignUpForm(request.POST,request.FILES)
+           
+          if request.content_type.count('application/json'):
+              try:
+                form = SignUpForm(json.loads(request.body))
+              except :  pass
+          else:
+              form=SignUpForm(request.POST,request.FILES)
 
           if form.is_valid():
              user = User.objects.create_user(username=form.cleaned_data['username'],email=form.cleaned_data['email'],password=form.cleaned_data['password'])
@@ -76,6 +83,14 @@ class AddPost(ListView):
          if form.is_valid():
              post=Post(title=form.cleaned_data['title'],img=form.cleaned_data['img'],descr=form.cleaned_data['descr'])
              post.user=request.user
+             categories=request.POST.getlist('categories')
+
+             if isinstance(categories,(tuple,list)):
+
+                 for cat_name in categories:
+                     if not  post.categories.filter(can_name=cat_name).exists():
+                        post.categories.create(cat_name=cat_name)
+
              post.save()
              response.status="Added"
          else:
@@ -128,8 +143,6 @@ class PostView(DetailView):
     
       def get(self,request,*args,**kw):
            return super().get(request,*args,**kw)
-
-
 
 
 
@@ -202,7 +215,7 @@ class DelComment(ListView,LoginRequiredMixin):
 
       def get(self,request):
 
-          if self.test_func():
+          if self.test_func() or request.user.is_superuser:
               self.response['status']="Deleted"
               self.comment.delete()
           else:
@@ -235,9 +248,24 @@ class Search (ListView):
 class UserPosts(ListView):
     
     def get(self,request):
+
          user_id=request.GET.get('user_id')
+
          if user_id:
              posts=Post.objects.select_related().filter(user__id__exact=user_id).values().order_by('id')
+             list_posts=list()
+
+             for key,item in enumerate(posts.iterator()):
+                 new_val=list(posts.values)[key]
+                 orders=Order.objects.filter(products__id=new_val.get('id'))
+                 count=0 
+
+                 for order in orders.iterator():
+                     count+=orders.products.all().count()
+
+                 new_val.update({"count":count})
+                 list_posts.append(new_val)
+
              return JsonResponse(list(posts if posts else []),safe=False)
          else:
              return JsonResponse({'status':'not found'})
@@ -252,7 +280,7 @@ class DeletePost(ListView,LoginRequiredMixin):
 
             obj=Post.objects.filter(id__exact=post_id).first()
 
-            if obj.user.id is request.user.id:
+            if obj.user.id is request.user.id or (request.user.is_superuser ):
                 obj.delete()
                 return JsonResponse({"status":"Deleted"})
 
@@ -277,13 +305,15 @@ class UpdatePost(FormView,LoginRequiredMixin):
             if not updated:
                 self.response['errors'].append("The required post doesn't exist")
             else:
-                rows=updated.update(title=form.cleaned_data['title'],img=form.cleaned_data['img'],descr=form.cleaned_data['descr'],
-                price=form.cleaned_data['price'])
-                self.response['status']="Updated" if rows else "Not updated"
+                if request.user.id==updated.user.id or request.user.is_superuser:
+                   rows=updated.update(title=form.cleaned_data['title'],img=form.cleaned_data['img'],descr=form.cleaned_data['descr'],
+                   price=form.cleaned_data['price'])
+                   self.response['status']="Updated" if rows else "Not updated"
 
         else:
-            self.response['errors']=form.errors if form.errors else [{"email":"You are not authenticated"}]
-            return JsonResponse(self.response)
+            self.response['errors']=form.errors if form.errors else [{"email":"You are not authenticated  or the post doesn't belong to you ."}]
+
+        return JsonResponse(self.response)
 
 
 
@@ -297,6 +327,10 @@ class UserOrders(ListView,LoginRequiredMixin):
           if not user_id or isUser:
               response.append({"errors":["Invalid user_id"]})
           else:
+              if not request.user.id==user_id or not request.user.is_superuser:
+                    response.append({"errors":["You can see the orders of other users"]})
+                    return JsonResponse(response,safe=False)
+
               orders=Order.objects.filter(user__id=user_id)
               
               if orders.exists():
@@ -383,7 +417,105 @@ class SortBy(ListView):
                 new_item.update({"user":{"username":item.user.username}})
                 list_new.append(new_item)
 
-            return JsonResponse(list(posts.values()),safe=False)
+            return JsonResponse(list_new,safe=False)
         else:
             return HttpResponseForbidden()
     
+
+
+
+class CategoryView(ListView):
+       
+       def get(self,request):
+           cat_name=request.GET.get('category')
+           posts=Post.objects.filter(categories__cat_name=cat_name)
+           list_new = list()
+
+           for key,item in enumerate(posts.iterator()):
+                new_item=list(posts.values())[key]
+                new_item.update({"user":{"username":item.user.username},"categories":list(posts[key].categories.values())})
+                list_new.append(new_item)
+
+           return JsonResponse(list(list_new),safe=False)
+
+
+class CategoriesList(ListView):
+
+       def get(self,request):
+           categories=list(Category.objects.all().values())
+           return JsonResponse(categories,safe=False)
+
+
+
+class ProductsBuyers(View):
+       permission_denied_message="You need to log in . By the way, the error can be caused by the permission deny. Only users who own the post can access the page"
+
+       def has_permission(self):
+           user_id=self.request.user.id;
+           post_id=self.request.GET.get('post_id')
+           post=Post.objects.filter(id=post_id).first() 
+
+           if post.user.id==user_id or self.request.user.is_superuser:
+               return True;
+
+           return False;
+
+       def get(self,request):
+
+           if not self.has_permission():
+               return JsonResponse({"error":self.permission_denied_message})
+
+           product_id=request.GET.get('post_id')
+           orders=Order.objects.filter(products__id=product_id).all().select_related()
+           response=list()
+
+           for target_list in orders.iterator():
+               new_item={"user":{"username":target_list.user.username}}
+               new_item.update(list(target_list.products.filter(id=product_id).all().values())[0])
+
+               try:
+                   new_item.pop('user_id')
+               except KeyError:
+                   pass
+
+               new_item.update({"count":target_list.quantity})
+               response.append(new_item)
+
+           return JsonResponse(response,safe=False)
+
+
+
+class UsersList(ListView):
+    
+    def get(self,request):
+
+        if not request.user.is_superuser:
+            return  HttpResponseForbidden()
+
+        page=request.GET.get('page')
+        users= list(User.objects.all().values())
+        p = Paginator(users,4)
+        page_item=p.page(page if page else 1)
+        response={"has_next":page_item.has_next(),"has_prev":page_item.has_previous(),"data":page_item.object_list,"endindex":page_item.end_index()}
+        return JsonResponse(response,safe=False)
+
+
+class DeleteUser(ListView):
+    
+    def get(self,request):
+        user_id=request.GET.get('user_id')
+
+        if not request.user.is_superuser and not request.user.id == user_id :
+            return  HttpResponseForbidden()
+
+        user=User.objects.filter(id=user_id).first()
+        response={"status":""}  
+
+        if user:
+            response['status']="Deleted"
+            user.delete()
+
+        return JsonResponse(response)   
+
+
+        
