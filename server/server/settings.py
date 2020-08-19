@@ -137,3 +137,9 @@ dirname = os.path.dirname(__file__)
 MEDIA__URL='/public/'
 
 MEDIA__ROOT = os.path.join(os.path.dirname(os.path.dirname(__file__)),r'/firstapp/public')
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.urk.net'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'valeria18ua@ukr.net'
+EMAIL_HOST_PASSWORD = '2dS-PPj-7e2-xqY'

@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse,HttpResponseForbidden
 from firstapp.response import Response
 import json
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.mixins import PermissionRequiredMixin, AccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.http import require_http_methods
@@ -9,7 +11,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as loginFun
 from django.contrib.auth.decorators import user_passes_test
 from firstapp.form import Authenticate,SignUpForm,AddPostForm,AddCommentForm
+from firstapp.signals import order_add
 from django.db.models import Q
+from firstapp.role import Role
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView,DetailView,FormView
@@ -27,19 +31,21 @@ from django.core import serializers
 
 @require_http_methods(['POST','OPTIONS'])
 def login(request):
-    
-    if request.user.is_authenticated:
-        message={"status":"Added","messages":[],"errors":[]}    
-    else :
+    message={"status":"","messages":[],"errors":[],"role":{}}    
+    user=request.user
+    if not user.is_authenticated:
         form =Authenticate(request.POST,request.FILES)
-        message={"status":"","messages":[],"errors":[]}    
 
         if form.is_valid():
            message['status']="Added"
-           loginFun(request,form.cleaned_data['user_m'])
+           user=form.cleaned_data['user_m']
+           loginFun(request,user)
         else:
            message['errors']=form.errors
-        
+
+    if not len(message['errors']):
+            message.update({'status':"Added","id":user.id, "role":{"isSuperUser":user.is_superuser,"perm":Role(user).perm}})
+
     return JsonResponse(message)
 
 
@@ -47,7 +53,7 @@ def login(request):
 @require_http_methods(['POST','OPTIONS'])
 def signup(request):
 
-          message={"status":"","messages":[],"errors":[]}   
+          message={"status":"","messages":[],"errors":[],"role":{}}   
 
           if request.user.is_authenticated:
               message['status']="Added"
@@ -62,9 +68,16 @@ def signup(request):
 
           if form.is_valid():
              user = User.objects.create_user(username=form.cleaned_data['username'],email=form.cleaned_data['email'],password=form.cleaned_data['password'])
-             user.save()
              message['status']="Added"
              message['messages'].insert(0,user.id)
+             content_type = ContentType.objects.get_for_model(Post)
+
+             for item in Role.alluser_perm:
+                 permission,created = Permission.objects.get_or_create( codename=item, content_type=content_type,)
+                 user.user_permissions.add(permission)
+
+             message['role'].update({"isSuperUser":user.is_superuser,"perm":Role(user).perm})
+             message['id']=user.id
              loginFun(request,user)
           else :
              message['errors']=form.errors
@@ -80,7 +93,7 @@ class AddPost(ListView):
     def post(self,request,*args,**kw):
          form=self.AddPostForm(request.POST,request.FILES)
         
-         if form.is_valid():
+         if form.is_valid() and (request.user.has_perm('firstapp.create_post') or request.user.is_superuser):
              post=Post(title=form.cleaned_data['title'],img=form.cleaned_data['img'],descr=form.cleaned_data['descr'])
              post.user=request.user
              categories=request.POST.getlist('categories')
@@ -251,7 +264,7 @@ class UserPosts(ListView):
 
          user_id=request.GET.get('user_id')
 
-         if user_id:
+         if user_id :
              posts=Post.objects.select_related().filter(user__id__exact=user_id).values().order_by('id')
              list_posts=list()
 
@@ -271,6 +284,7 @@ class UserPosts(ListView):
              return JsonResponse({'status':'not found'})
 
 
+
 class DeletePost(ListView,LoginRequiredMixin):
     
     def get(self,request):
@@ -280,7 +294,7 @@ class DeletePost(ListView,LoginRequiredMixin):
 
             obj=Post.objects.filter(id__exact=post_id).first()
 
-            if obj.user.id is request.user.id or (request.user.is_superuser ):
+            if (obj.user.id is request.user.id  and request.user.has_perm('firstapp.delete_post'))or request.user.is_superuser :
                 obj.delete()
                 return JsonResponse({"status":"Deleted"})
 
@@ -305,7 +319,7 @@ class UpdatePost(FormView,LoginRequiredMixin):
             if not updated:
                 self.response['errors'].append("The required post doesn't exist")
             else:
-                if request.user.id==updated.user.id or request.user.is_superuser:
+                if (int(request.user.id)==updated.user.id and request.user.has_perm('firstapp.update_post')) or request.user.is_superuser:
                    rows=updated.update(title=form.cleaned_data['title'],img=form.cleaned_data['img'],descr=form.cleaned_data['descr'],
                    price=form.cleaned_data['price'])
                    self.response['status']="Updated" if rows else "Not updated"
@@ -327,8 +341,10 @@ class UserOrders(ListView,LoginRequiredMixin):
           if not user_id or isUser:
               response.append({"errors":["Invalid user_id"]})
           else:
-              if not request.user.id==user_id or not request.user.is_superuser:
-                    response.append({"errors":["You can see the orders of other users"]})
+              if  int(request.user.id)==int(user_id) or request.user.is_superuser or request.user.has_perm('firstapp.view_orders_of_others'):
+                    pass
+              else:
+                    response.append({"errors":["You can't see the orders of other users"]})    
                     return JsonResponse(response,safe=False)
 
               orders=Order.objects.filter(user__id=user_id)
@@ -361,29 +377,39 @@ class AddOrder(ListView,LoginRequiredMixin):
         num=request.GET.get('num')
         
 
-        if user_id and post_id and int(request.user.id) == int(user_id):
+        if user_id and post_id and int(request.user.id) == int(user_id) and request.user.has_perm('firstapp.add_order') and request.GET.get('post_id'):
 
-            user_orders_l = Order.objects.filter(user_id=user_id)
-            user_order=user_orders_l[0].products.filter(id=post_id)
+            user_orders_l = Order.objects.filter(user__id=user_id)
             post=Post.objects.filter(id=post_id)  
 
-            if post.exists():
+            if post.exists() and num.isdigit():
                 status="Added"
-                if user_order.exists():
+
+                if user_orders_l.exists():
+
+                    user_order=user_orders_l.filter(products__id=post_id)
                     order=user_orders_l.first()
 
-                    if int(num if num else "1") == 0:
-                        user_orders_l[0].remove(user_order)
-                        status="Deleted"
-                    else:     
-                        order.quantity=num
-                        order.save()
-                        user_orders_l[0].save()
+                    if user_order.exists():
+                         if int(num)==0:
+                               user_orders_l[0].products.remove(post.first().id)
+                               status="Deleted"
+                         else:
+                             order.quantity=num
+                             order.save()
+                    else:
+                            new_order=Order(quantity=num,user=request.user);
+                            new_order.save();
+                            new_order.products.add(post.first())
+
+                    order_add.send(sender=user_orders_l.__class__,post=order,email=request.user.email,num=num)
                 else:
                     new_order=Order(quantity=num);
                     new_order.user=request.user
                     new_order.save();
                     new_order.products.add(post.first())
+                    order_add.send(sender=new_order.__class__,post=post.first(),email=request.user.email,num=num)
+
 
 
                 return JsonResponse({"status":status})
@@ -462,7 +488,7 @@ class ProductsBuyers(View):
 
        def get(self,request):
 
-           if not self.has_permission():
+           if not self.has_permission() or not request.has_perm("firstapp.view_orders"):
                return JsonResponse({"error":self.permission_denied_message})
 
            product_id=request.GET.get('post_id')
@@ -506,7 +532,7 @@ class DeleteUser(ListView):
     def get(self,request):
         user_id=request.GET.get('user_id')
 
-        if not request.user.is_superuser and not request.user.id == user_id :
+        if not int(request.user.id) == int(user_id) and (not request.user.has_perm('firstapp.delete_account') or not request.user.is_superuser):
             return  HttpResponseForbidden()
 
         user=User.objects.filter(id=user_id).first()
