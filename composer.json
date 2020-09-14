@@ -1,0 +1,8 @@
+{   
+    "name":"GUZZLE",
+    "description": "guzzle project",
+    "require": {
+       "guzzlehttp/guzzle": "^7.0"
+    }
+ }
+
