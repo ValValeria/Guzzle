@@ -16,24 +16,27 @@ class Dictionary extends Client
      * @return Entry[]
      * @throws DictionaryException
      */
-    public function entries(string $lang, string $word) : array
+    public function entries(string $lang, string $word)
     {
         try {
-            $data = $this->client->get(
-                "/api/v2/entries/$lang/$word?fields=pronunciations&strictMatch=false",
-            );
+            
+            $data = json_decode($this->get(
+                "/api/v2/entries/$lang/$word?strictMatch=false",
+            ));
+
         } catch (ClientException $e) {
             switch ($e->getCode()) {
                 case 404:
                     $data = null;
-                    break;
+                    return;
                 default:
                     throw new DictionaryException('Something went wrong');
             }
-
+        } finally {
+            $results = $data->results ?? [];
         }
 
-       return (new EntriesBuilder($data))->build();
+       return json_encode((new EntriesBuilder($results))->build(),JSON_UNESCAPED_UNICODE);
     }
 }
 

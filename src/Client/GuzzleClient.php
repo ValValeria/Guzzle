@@ -24,7 +24,7 @@ abstract class GuzzleClient
     public function get(string $url)
     {
         try {
-            return json_decode($this->client->get($url)->getBody()->getContent());
+            return $this->client->get($url)->getBody()->getContents();
         } catch (RequestException $e) {
             throw new ClientException($e->getMessage(), $e->getCode());
         }
