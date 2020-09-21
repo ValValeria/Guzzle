@@ -2,21 +2,19 @@
 
 require_once '../vendor/autoload.php';
 
-use Dictionary\Dictionary;
+use URLHandler\URLHandler;
 
+$handler = new URLHandler();
+$method = $_SERVER['REQUEST_METHOD'];
 
-$word = 'how';
-
-$dictionary = new Dictionary();
-
-try {
-    $results = $dictionary->entries('en-gb', $word);
-    echo $results;
-} catch (Throwable $e) {
-    echo "Line: ".$e->getLine()."<br/>";
-    echo "Filename: ".$e->getFile()."<br/>";
-    echo $e->getMessage();
+if($method == "GET"){
+   echo $handler->getMainPage();
+} else if ($method == "POST" && strlen($_POST['word'])>=3 && strlen($_POST['word'])<=20) {
+   echo $handler->findWord($_POST['word']);
+} else {
+   http_response_code(404);
 }
+
 
 ?>
 

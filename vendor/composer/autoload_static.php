@@ -24,6 +24,14 @@ class ComposerStaticInit41e96fa7ec57fe2b4f253ec4fed6dc7c
         array (
             'Webmozart\\Assert\\' => 17,
         ),
+        'U' => 
+        array (
+            'URLHandler\\' => 11,
+        ),
+        'T' => 
+        array (
+            'Templates\\' => 10,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Ctype\\' => 23,
@@ -66,6 +74,14 @@ class ComposerStaticInit41e96fa7ec57fe2b4f253ec4fed6dc7c
         'Webmozart\\Assert\\' => 
         array (
             0 => __DIR__ . '/..' . '/webmozart/assert/src',
+        ),
+        'URLHandler\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/URLHandler',
+        ),
+        'Templates\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Templates',
         ),
         'Symfony\\Polyfill\\Ctype\\' => 
         array (
