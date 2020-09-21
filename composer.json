@@ -3,6 +3,8 @@
     "description": "guzzle project",
     "require": {
        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.3"
     }
- }
-
+}

@@ -21,10 +21,7 @@ class EntriesBuilder
         $entries = [];
 
         foreach ($this->data as $item) {
-            try {
-                array_push($entries,$this->buildEntry($item));
-            } catch (\InvalidArgumentException $e) {
-            }
+            array_push($entries,$this->buildEntry($item));
         }
 
         return $entries;
@@ -42,15 +39,19 @@ class EntriesBuilder
         foreach ($response->lexicalEntries as $lexicalEntry) {
             foreach ($lexicalEntry->entries as $item) {
                 
-                foreach (($item->senses) as $sence) {
-                    foreach (($sence->definitions) as $definition) {
-                        $entry->addDefinition($definition);
+                if (property_exists($item,'senses')){
+                    foreach (($item->senses) as $sence) {
+                        foreach (($sence->definitions) as $definition) {
+                            $entry->addDefinition($definition);
+                        }
                     }
                 }
 
-                foreach (($item->pronunciations) as $pronunciation) {
-                    $entry->addPronunciation($pronunciation->audioFile);
-                }
+                if (property_exists($item,'pronunciations')) {
+                    foreach (($item->pronunciations) as $pronunciation) {
+                        $entry->addPronunciation($pronunciation->audioFile);
+                    }
+                } 
             }
         }
 

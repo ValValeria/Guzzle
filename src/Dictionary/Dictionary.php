@@ -21,22 +21,18 @@ class Dictionary extends Client
         try {
             
             $data = json_decode($this->get(
-                "/api/v2/entries/$lang/$word?strictMatch=false",
+                "/api/v2/entries/$lang/$word?&strictMatch=false",
             ));
 
         } catch (ClientException $e) {
-            switch ($e->getCode()) {
-                case 404:
-                    $data = null;
-                    return;
-                default:
-                    throw new DictionaryException('Something went wrong');
+            if($e->getCode()>299){
+                throw new DictionaryException('Something went wrong');
             }
         } finally {
-            $results = $data->results ?? [];
+            $results = is_array($data->results)?$data->results : [];
         }
 
-       return json_encode((new EntriesBuilder($results))->build(),JSON_UNESCAPED_UNICODE);
+        return json_encode((new EntriesBuilder($results))->build(),JSON_UNESCAPED_UNICODE);
     }
 }
 
