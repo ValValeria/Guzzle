@@ -1,8 +1,10 @@
 <?php
 
-require_once realpath('../src/autoload.php');
+require_once realpath('src/autoload.php');
+require_once realpath('vendor/autoload.php');
 
 use PHPUnit\Framework\TestCase;
+use Entries\EntriesBuilder;
 
 class ODTest extends TestCase
 {
@@ -16,13 +18,16 @@ class ODTest extends TestCase
 
    public function additionProvider()
    { 
-       $data = json_decode(file_get_contents(realpath('data.json')));
-       $headlines = [ "defitions and pronuctions"=>[],"only defitions"=>[],'no results'=>[]];
+       $data = json_decode(file_get_contents('tests/data.json'),true);
+       $headlines = [ "definitions and pronucitions"=>[],"only definitions"=>[],'no results'=>[]];
 
-       foreach ($headlines as $key => $value) {
-            $nextItem = next($data);
-            $headlines[$key]= [$nextItem['data'],$nextItem['result']];
-       }
+       foreach (array_slice($headlines,0,2) as $key => $value) {
+            $nextItem = $data[next($data)];
+
+            if ($nextItem) {
+                array_push($headlines[$key],$nextItem['data'],$nextItem['result']);
+            }
+       }  
 
        return $headlines;
    }
