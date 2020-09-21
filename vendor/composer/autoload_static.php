@@ -40,10 +40,19 @@ class ComposerStaticInit41e96fa7ec57fe2b4f253ec4fed6dc7c
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
         ),
+        'E' => 
+        array (
+            'Entries\\' => 8,
+        ),
         'D' => 
         array (
             'Doctrine\\Instantiator\\' => 22,
+            'Dictionary\\' => 11,
             'DeepCopy\\' => 9,
+        ),
+        'C' => 
+        array (
+            'Client\\' => 7,
         ),
     );
 
@@ -86,13 +95,25 @@ class ComposerStaticInit41e96fa7ec57fe2b4f253ec4fed6dc7c
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
+        'Entries\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Entries',
+        ),
         'Doctrine\\Instantiator\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/instantiator/src/Doctrine/Instantiator',
         ),
+        'Dictionary\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Dictionary',
+        ),
         'DeepCopy\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
+        ),
+        'Client\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Client',
         ),
     );
 
