@@ -7,4 +7,4 @@
    Open the url `http://localhost:8000/src/main.php`
 
 ## How does the app look like ?
- > ![alt text](https://github.com/alexanderzenchenko/odclient/blob/master/screen.PNG)
+ > ![alt text](https://github.com/ValValeria/Guzzle/blob/master/screen.png?raw=true)
