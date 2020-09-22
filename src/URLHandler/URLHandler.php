@@ -21,12 +21,12 @@ class URLHandler
         return eval( '?> '.$this->content.' <?php ' );
       }
 
-      public function findWord($word)
+      public function findWord($word,$error=false)
       {
         try {
             $results = $this->dictionary->entries('en-gb', $word);
         } catch (\Throwable $e) {
-            $error = "Error ".$e->getMessage();
+            $error = true;
         }
         return eval( '?> '.$this->content.' <?php ' );
       }

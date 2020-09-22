@@ -51,7 +51,7 @@
                 elseif (isset($error)):   
                ?>    
                 <div class="alert alert-danger">
-                  Your word doesn't exist
+                  <b>Your word doesn't exist. </b>
                 </div>
                <?php 
                endif;

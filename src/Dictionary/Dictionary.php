@@ -22,7 +22,7 @@ class Dictionary extends Client
         try {
             
             $data = json_decode($this->get(
-                "/api/v2/entries/$lang/$word?fields=definitions%2Cpronunciations&strictMatch=false",
+                "/api/v2/entries/$lang/".filter_var($word,FILTER_SANITIZE_STRING)."?fields=definitions%2Cpronunciations&strictMatch=false",
             ),true);
 
             $results = $data['results'] ?? [];
