@@ -24,7 +24,9 @@ class URLHandler
       public function findWord($word,$error=false)
       {
         try {
-            $results = $this->dictionary->entries('en-gb', $word);
+            if(!$error){
+              $results = $this->dictionary->entries('en-gb', $word);
+            }
         } catch (\Throwable $e) {
             $error = true;
         }
