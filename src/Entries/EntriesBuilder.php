@@ -49,7 +49,9 @@ class EntriesBuilder
 
                 if (isset($item['pronunciations'])) {
                     foreach ($item['pronunciations'] as $pronunciation) {
-                        $entry->addPronunciation($pronunciation['audioFile']);
+                        if(isset($pronunciation['audioFile'])){
+                            $entry->addPronunciation($pronunciation['audioFile']);
+                        }
                     }
                 } 
             }
