@@ -28,7 +28,7 @@
                 <h1 class="text-center"> Search</h1>
             </div>
             <div class="form-group d-flex">
-                <input type="text" class="form-control" id="exampleInputPassword1" name="word" min="4" max="20" value="<?php echo $_POST['word'];?>">
+                <input type="text" class="form-control" id="exampleInputPassword1" name="word" min="4" max="20" value="<?php echo isset($_POST['word'])?$_POST['word']:"";?>">
                 <button class="btn btn-danger">Submit</button>
             </div>
             <div class="pt-3">

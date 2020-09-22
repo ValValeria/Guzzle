@@ -1,8 +1,8 @@
 <?php
 
-namespace Entries;
+namespace Main\Entries;
 
-use Entries\Entries as Entry;
+use Main\Entries\Entries as Entry;
 
 class EntriesBuilder
 {

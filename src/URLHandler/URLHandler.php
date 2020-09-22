@@ -1,8 +1,8 @@
 <?php
 
-namespace URLHandler;
+namespace Main\URLHandler;
 
-use Dictionary\Dictionary;
+use Main\Dictionary\Dictionary;
 
 class URLHandler
 {

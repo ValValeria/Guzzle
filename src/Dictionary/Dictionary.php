@@ -1,10 +1,10 @@
 <?php
 
-namespace Dictionary;
+namespace Main\Dictionary;
 
-use Client\GuzzleClient as Client;
-use Entries\EntriesBuilder;
-use Dictionary\DictionaryException;
+use Main\Client\GuzzleClient as Client;
+use Main\Entries\EntriesBuilder;
+use Main\Dictionary\DictionaryException;
 
 class Dictionary extends Client
 {

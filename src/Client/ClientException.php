@@ -1,6 +1,6 @@
 <?php
 
-namespace Client;
+namespace Main\Client;
 
 class ClientException extends \Exception
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Entries;
+namespace Main\Entries;
 
 class Entries 
 {

@@ -9,11 +9,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Client\\": "src/Client",
-            "Dictionary\\":"src/Dictionary",
-            "Entries\\":"src/Entries",
-            "Templates\\":"src/Templates",
-            "URLHandler\\":"src/URLHandler"
+            "Main\\":"src/"
         }
     }
 }

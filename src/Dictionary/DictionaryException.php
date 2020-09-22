@@ -1,6 +1,6 @@
 <?php
 
-namespace Dictionary;
+namespace Main\Dictionary;
 
 class DictionaryException extends \Exception
 {

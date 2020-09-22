@@ -2,7 +2,7 @@
 
 require_once '../vendor/autoload.php';
 
-use URLHandler\URLHandler;
+use Main\URLHandler\URLHandler;
 
 $handler = new URLHandler();
 $method = $_SERVER['REQUEST_METHOD'];
