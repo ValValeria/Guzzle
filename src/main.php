@@ -1,6 +1,6 @@
 <?php
 
-require_once '../vendor/autoload.php';
+require_once realpath('vendor/autoload.php');
 
 use Main\URLHandler\URLHandler;
 
@@ -15,7 +15,12 @@ if($method == "GET"){
 
       $isError = false;
 
-      if (strlen($_POST['word'])>=3 && strlen($_POST['word'])<=20) {
+      $isValidWord = filter_var($_POST['word'], FILTER_SANITIZE_STRING,['options' => array(
+         'min_range' => 3,
+         'max_range' => 20
+      )]);
+
+      if (!$isValidWord) {
           $isError = true;
       }
 

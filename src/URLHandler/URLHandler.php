@@ -12,7 +12,7 @@ class URLHandler
       public function __construct()
       {
         $this->dictionary = new Dictionary();
-        $this->content = file_get_contents('../src/Templates/MainPage.blade.php');
+        $this->content = file_get_contents(realpath('src/Templates/MainPage.blade.php'));
       }
 
       public function getMainPage()
@@ -30,6 +30,7 @@ class URLHandler
         } catch (\Throwable $e) {
             $error = true;
         }
+        
         return eval( '?> '.$this->content.' <?php ' );
       }
 
