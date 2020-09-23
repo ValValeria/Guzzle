@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Entries\EntriesBuilder;
+use Main\Entries\EntriesBuilder;
 
 class ODTest extends TestCase
 {
